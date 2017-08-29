@@ -1,0 +1,141 @@
+Input
+=============
+IP1	C1,C3,C5	TX1,TX3,TX5	
+IP2	C1,C2,C3,C5	TX1,TX2,TX3,TX5	TX1,TX3
+IP3	C2,C5	TX2,TX5	TX5
+IP4	C1,C4,C5	TX1,TX4,TX5	
+IP5	C2,C3,C5	TX2,TX3,T5	TX3
+IP6	C1,C5	TX1,TX5	TX1
+IP7	C4	TX4
+
+Output
+=============
+IP1,IP2	C1
+IP1,IP4	C5,C1
+IP1,IP5	C3
+IP1,IP6	C1
+IP2,IP1	C3,C5
+IP2,IP3	C2
+IP2,IP4	C1,C5
+IP2,IP5	C2,C3
+IP2,IP6	C1
+IP3,IP1	C5
+IP3,IP2	C5
+IP3,IP4	C5
+IP3,IP5	C2,C5
+IP4,IP6	C1
+IP5,IP1	C5
+IP5,IP2	C5
+IP5,IP4	C5
+IP6,IP1	C5
+IP6,IP2	C5
+IP6,IP3	C5
+IP6,IP4	C5
+IP6,IP5	C5
+IP7,IP4	C4
+
+===========================================
+Second Level Requirement
+===========================================
+Input for M3
+===================
+C1 IP1,IP3
+C2 IP1,IP2,IP3
+C3 IP1,IP2
+C5 IP1
+
+M3 Output
+==============
+IP1 IP1,IP3,C1
+IP3 IP1,IP3,C1
+
+IP1 IP1,IP2,C2
+IP1 IP1,IP3,C2
+IP1 IP2,IP3,C2
+
+IP2 IP1,IP2,C2   
+IP2 IP2,IP3,C2
+IP2 IP1,IP3,C2
+
+IP3 IP1,IP3,C2   
+IP3 IP2,IP3,C2
+IP3 IP1,IP3,C2
+
+M3 Output
+==============
+IP1 IP1,IP3,C1
+IP3 IP1,IP3,C1
+ 
+IP1 IP1,IP2,C2
+IP1 IP1,IP3,C2
+IP2 IP1,IP2,C2   
+IP2 IP2,IP3,C2
+IP3 IP1,IP3,C2   
+IP3 IP2,IP3,C2
+ 
+IP1 IP1,IP2,C3
+IP2 IP1,IP2,C2
+ 
+R3 Logic
+=========================================================
+IP1  | IP1,IP3,C1 | IP1,IP2,C2 | IP1,IP3,C2 | IP1,IP2,C3
+IP2  |IP1,IP2,C2  | IP2,IP3,C2 | IP1,IP2,C2
+IP3  | IP1,IP3,C1 |IP1,IP3,C2 |IP2,IP3,C2
+=========================================================
+Logic
+=====
+Form ipset
+IP1,IP2,IP3
+Check which consumer not associated directly with which IP
+For
+C1 not tagged to IP2
+C3 not tagged to IP3
+ 
+R3 details
+==========
+IP List
+Customer
+ 
+Second level check
+==================
+Input Data
+==========
+IP1,IP2 C1,C2,C5
+IP2,IP3 C2,C5,C3
+IP4,IP2 C5
+ 
+IP1
+Expected output
+===============
+IP1 C3
+IP3 C1
+IP3 C5
+IP4 C2,C5
+================
+ 
+C1 IP1,IP2
+C2 IP1,IP2,IP3
+C5 IP1,IP2,IP4
+====================
+IP1 IP1,IP2,C1
+IP2 IP1,IP2,C1
+ 
+IP1 IP1,IP2,C2
+IP1 IP2,IP3,C2
+IP1 IP1,IP3,C2
+ 
+IP2 IP1,IP2,C2
+IP2 IP2,IP3,C2
+IP2 IP1,IP3,C2
+ 
+IP3 IP1,IP2,C2
+IP3 IP2,IP3,C2
+IP3 IP1,IP3,C2
+ 
+IP2 IP2,IP4,C5
+IP4 IP2,IP4,C5
+=======================
+IP1 | IP1,IP2,C1 | IP1,IP2,C2 | IP2,IP3,C2 | IP1,IP3,C2
+
+
+

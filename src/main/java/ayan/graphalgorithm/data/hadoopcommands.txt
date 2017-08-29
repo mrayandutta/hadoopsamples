@@ -1,0 +1,18 @@
+Start hadoop:
+=============
+bin/hadoop namenode -format
+bin/start-dfs.sh
+bin/start-mapred.sh
+Create a data directory
+========================
+bin/hadoop dfs -mkdir hdfs:/data/
+
+Copy a text to the HDFS 
+=======================
+bin/hadoop dfs -copyFromLocal /home/user/Desktop/data.txt hdfs:/data/data.txt
+
+Run the jar:
+============
+bin/hadoop jar /home/user/Desktop/graphalgorithm.jar  poc.graphalgorithm.ChainedJobs hdfs:/data/ /output
+
+

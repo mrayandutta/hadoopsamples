@@ -1,0 +1,53 @@
+Create MySQL Tables
+===================
+create database loginsight;
+use loginsight;
+
+Create Hive Table for weblogs
+=============================
+CREATE EXTERNAL TABLE weblogs (
+  ts STRING,
+  user STRING,
+  reportname STRING,
+  reportexecutiontime STRING,
+  ip STRING
+  )
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES (
+  "input.regex" = "(\\d{2}-\\d{2}-\\d{4}:\\d{2}:\\d{2}:\\d{2})\\s(\\w+)\\s(\\w+)\\s(\\w+)\\s(\\d{3}.\\d{3}.\\d{2}.\\d{2})",
+  "output.format.string" = "%1$s %2$s %3$s %4$s %5$s"
+)
+STORED AS TEXTFILE
+LOCATION '/loginsight/hive/weblogs';
+
+Important points on Regex 
+==========================
+In deserialization stage of RegexSerDe, if a row does not match the regex, 
+then all columns in the row will be NULL. 
+If a row matches the regex but has less than expected groups, the missing groups will be NULL. 
+If a row matches the regex but has more than expected groups, the additional groups are just ignored
+
+Create Table for hvc or users
+==============================
+CREATE EXTERNAL TABLE user
+(
+userid STRING,
+username STRING
+)
+
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ","
+LOCATION '/loginsight/hive/user';
+
+Load The  Data for weblogs and hvc
+===================================
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/logs/*' OVERWRITE INTO TABLE weblogs;
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/hvc/*' OVERWRITE INTO TABLE user;
+
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/monthlylogs_archived/app1_01_2014_log.txt' OVERWRITE INTO TABLE weblogs;
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/monthlylogs_archived/app1_02_2014_log.txt' INTO TABLE weblogs;
+
+ 
+
+
+

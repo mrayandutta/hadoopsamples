@@ -1,0 +1,162 @@
+Generate Dummy Data
+===================
+Run the main method of WeblogUtil
+  
+Start Hadoop
+============
+cd hadoop-1.2.1/
+bin/hadoop namenode -format
+bin/start-all.sh
+
+bin/hadoop fs -rmr /loginsight/*
+
+Place Data Into Local Directory
+===============================
+Place loginsight/testdata folder to Desktop
+  
+Create HDFS input data directory
+=================================
+bin/hadoop dfs -mkdir hdfs:/loginsight/
+  
+Load data into HDFS
+===================
+bin/hadoop dfs -copyFromLocal /home/user/Desktop/testdata/* hdfs:/loginsight/
+
+Debug Config Arguments
+=======================
+hdfs://192.168.179.134:8020/loginsight/logs/ hdfs://192.168.179.134:8020/loginsight/hvc/highlyvaluedcustomer.txt hdfs://192.168.179.134:8020/loginsightoutputdmip/ 
+  
+Run the MapReduce program Jar
+=============================
+bin/hadoop jar /home/user/Desktop/LogInsight.jar  loginsight.logprocessor.LogFileDriver hdfs:/loginsight/ hdfs:/loginsightoutput/
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  loginsight.logprocessor.LogFileDriver hdfs:/loginsight/ hdfs:/loginsightoutput/
+
+Run the MapReduce program Jar with Distributed Cache
+====================================================
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  loginsight.logprocessor.mapsidejoin.LogFileDriverWithDC hdfs:/loginsight/ hdfs:/loginsightoutputdc/ /loginsight/hvc/highlyvaluedcustomer.txt
+
+Command For Reducer Side Join LogFileDriverWithMIP Driver Run
+=============================================================
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  loginsight.logprocessorwithmip.LogFileDriverWithMIP hdfs:/loginsight/logs hdfs:/loginsight/hvc hdfs:/loginsightoutputmip/
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  loginsight.logprocessorwithmop.LogInsightDriver hdfs:/loginsight/logs hdfs:/loginsightoutputmop/
+
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  loginsight.logprocessorwithmop.LogInsightDriver hdfs:/loginsight/* hdfs:/loginsightoutputmop/
+
+  
+Merge the output of reducers and merge them
+===========================================
+bin/hadoop fs -getmerge hdfs:/loginsightoutput/ /home/user/Desktop/finaloutput.txt
+  
+View Job Details
+================
+http://localhost:50030/jobtracker.jsp
+  
+View Hadoop Admin UI
+====================
+http://localhost:50070/dfshealth.jsp
+  
+Clean the input directory(if required)
+========================================
+bin/hadoop dfs -rmr  /loginsight/*
+  
+Clean the output directory(if required)
+========================================
+bin/hadoop dfs -rmr  /loginsightoutput/*
+  
+Delete the output directory(if required)
+========================================
+bin/hadoop dfs -rmr  /loginsightoutput/
+  
+Hive Queries
+============
+hadoop dfs -mkdir /hiveinput
+bin/hadoop dfs -copyFromLocal /home/user/Desktop/finaloutput.txt hdfs:/hiveinput/finaloutput.txt
+  
+Drop table if it exists and check the location value
+====================================================
+drop  table log;
+  
+ 
+Create External Table For Initial Data Load 
+===========================================
+CREATE EXTERNAL TABLE startrack_staging (user STRING,report STRING,executiontime int ,day int , month int, year int , ip STRING ) ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' LOCATION '/startrack_staging/';
+
+LOAD DATA INPATH '/loginsightoutputmop/defaultoutput-m-00000' OVERWRITE INTO TABLE startrack_staging ;
+
+CREATE EXTERNAL TABLE startrack_staging_monthly (user STRING,report STRING,executiontime int ,day int , month int, year int , ip STRING ) ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' LOCATION 'hdfs:/startrack_staging_monthly/';
+
+  
+Load data from Local directory into the table
+=============================================
+LOAD DATA LOCAL INPATH '/home/user/Desktop/finaloutput.txt' OVERWRITE INTO TABLE log_staging;
+
+
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/monthlylogs_new/*' INTO TABLE startrack_log_staging_monthly;
+  
+Create Partitioned Table  
+=========================
+CREATE TABLE startrack_logs (user STRING,report STRING,executiontime int ,day int ,ip STRING ) 
+PARTITIONED BY ( month int ,year int)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',';
+
+Enable dynamic partitioning
+===========================
+SET hive.exec.dynamic.partition.mode=nonstrict;
+  
+Populate all partitions of the partitioned table from the unpartitioned table
+=============================================================================
+INSERT INTO TABLE startrack_logs PARTITION(month,year)
+SELECT user, report,executiontime,day,ip,month,year 
+FROM startrack_staging;
+
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/hive/monthly/' INTO TABLE startrack_staging_monthly;
+
+INSERT INTO TABLE startrack_logs PARTITION(month,year)
+SELECT user, report,executiontime,day,ip,month,year 
+FROM startrack_staging_monthly;
+
+  
+Load data from HDFS into the table
+===================================
+LOAD DATA INPATH '/loginsightoutput/part-m-00000' OVERWRITE INTO TABLE logdetails;
+
+CREATE TABLE IF NOT EXISTS loginsight.user (userid STRING, name STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',';
+
+LOAD DATA LOCAL INPATH '/home/user/Desktop/testdata/hvc/' INTO TABLE startrack_staging_monthly;
+  
+Hive with Sqoop
+===============
+  
+In case find the location of the table for sqoop
+================================================
+After Hive  , lets create table is created and data is populated create similar table in mysql.
+===============================================================================================
+mysql -u root -p
+create database logdb;
+grant all privileges on logdb.* to ''@localhost ;
+use logdb;
+create table logrecords(user char(20),action char(20), ts char(20), ip char(20)); 
+  
+Final Sqoop Command For Export
+==============================
+sqoop export --connect jdbc:mysql://127.0.0.1/logdb --table logrecords --export-dir hdfs:/user/hive/warehouse/logs.db/logdetails --username root -P  -m 1
+  
+Pig Script
+==========
+A = LOAD '/loginsightoutput/part-m-00000' using PigStorage (',') as (user: chararray, action: chararray, ts: chararray,ip: chararray);
+STORE A into 'data/finalpigoutput.txt' USING PigStorage(',');
+grp_user = GROUP A by user;
+DUMP B;
+  
+Sqoop Commands
+===============
+
+bin/hadoop jar /home/user/Desktop/loginsight-0.0.1-SNAPSHOT.jar  mrlearning.MRGroupingDriver hdfs:/loginsight/mrlearning/* hdfs:/mrlearningoutput
+
+hadoop jar /home/user/Desktop/mrlearning-0.0.1-SNAPSHOT.jar  mrlearning.wordcount.CharFilterDriver hdfs:/data/ hdfs:/output/
+
